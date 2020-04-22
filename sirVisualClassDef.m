@@ -20,9 +20,9 @@ classdef sirVisualClassDef < handle
     
     methods
         %constructor
-        function obj=sirVisualClassDef(N,L,KE) %KE should be between 0.1-0.8 so like 0.5 probably
+        function obj=sirVisualClassDef(N,KE) %KE should be between 0.1-0.8 so like 0.5 probably
             obj.N=N;
-            obj.L=L;
+            obj.L=sqrt(N);
             avg=KE*2;
             obj.t=0;
             obj.dt=0.01;                        %setting the time step
