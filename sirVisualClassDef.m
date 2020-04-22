@@ -15,7 +15,9 @@ classdef sirVisualClassDef < handle
         Eser;       %the energy per atom 
         KEser;      %the kinetic energy per atom
         PEser;      %potential energy per atom
-        KEfix;
+        Infected;   %how many infected people
+        infCount;   %how many infected people at the timestep
+        Susceptible;%how many susceptible people
     end
     
     methods
@@ -32,6 +34,7 @@ classdef sirVisualClassDef < handle
             obj.pos=[posx',posy'];              %filling in pos array
             obj.pos=obj.pos-0.5;                %shifting indexes to not fall on whole numbers
             obj.vel=randn(obj.N,2)*sqrt(avg);   %distributing random velocities across the people
+            obj.infCount = 0;
             
         end
         
@@ -43,14 +46,14 @@ classdef sirVisualClassDef < handle
                 obj.pos(i,1)=obj.pos(i,1)+obj.dt*obj.vel(i,1);  %updating x coordinate
                 obj.pos(i,2)=obj.pos(i,2)+obj.dt*obj.vel(i,2);  %updating y coordinate
                 
-                rij=0;  %radius to atoms within boundary contributing to force
-                rijx=0; %x-distance to atoms within boundary
-                rijy=0; %y-distance to atoms within boundary
+                rij=zeros(1, obj.N);  %radius to atoms within boundary contributing to force
+                rijx=zeros(1, obj.N); %x-distance to atoms within boundary
+                rijy=zeros(1, obj.N); %y-distance to atoms within boundary
                 
-                Fix=0;
-                Fiy=0;
+                Fix=zeros(1, obj.N);
+                Fiy=zeros(1, obj.N);
                 
-                potentialEnormal=0; %potential energy from within boundaries
+                potentialEnormal=zeros(1, obj.N); %potential energy from within boundaries
                 
                 if obj.pos(i,1)<0   %Checking boundary conditions
                     obj.pos(i,1)=obj.pos(i,1)+obj.L;
@@ -114,6 +117,7 @@ classdef sirVisualClassDef < handle
                     end
                 end
                 
+                PE = zeros(1, obj.N);
                 PE(i)=sum(potentialEnormal)/36; %summing all contributions for total potential energy
 
                 Fix=sum(Fix);   %summing all the x forces
@@ -121,16 +125,6 @@ classdef sirVisualClassDef < handle
 
                 obj.vel(i,1)=obj.vel(i,1)+obj.dt*Fix;   %updating x velocity
                 obj.vel(i,2)=obj.vel(i,2)+obj.dt*Fiy;   %updating y velocity
-                
-                velXavg=mean(obj.vel(:,1));             %Calculating average velocity in x
-                velYavg=mean(obj.vel(:,2));             %Calculating average veloctiy in y
-                
-                if obj.KEfix==1                         %KEfix
-                    for i=1:obj.N
-                        obj.vel(i,1)=(obj.vel(i,1)-velXavg)*(1/(sqrt(obj.vel(i,1)^2+obj.vel(i,2)^2)));
-                        obj.vel(i,2)=(obj.vel(i,2)-velYavg)*(1/(sqrt(obj.vel(i,1)^2+obj.vel(i,2)^2)));
-                    end
-                end
 
                 obj.pos(i,1)=obj.pos(i,1)+obj.dt*obj.vel(i,1);  %updating x coordinate
                 obj.pos(i,2)=obj.pos(i,2)+obj.dt*obj.vel(i,2);  %updating y coordinate
@@ -154,17 +148,21 @@ classdef sirVisualClassDef < handle
             obj.Eser(end+1)=mean(Energy);    %filling in Eser array
             
             obj.timeser(end+1)=obj.t;        %filling in timeser array
+            
+            obj.Infected(end+1)=obj.infCount;
+            
             obj.t=obj.t+obj.dt;              %updating current time
         end
     
-    
         function [k,p,e]=draw(obj)
-            subplot(1,1,1);
+            subplot(2,1,1);
             set(gca,'Color','k','XTick',[],'YTick',[]);
             
             counter=1;
-            while obj.t<2
+            while obj.t<2 %2/dt is the number of iterations simulation runs
                 %subplot(2,1,1);
+                
+                infCountCur = 0;
 
                 obj.step;
                 if counter==1
@@ -175,19 +173,27 @@ classdef sirVisualClassDef < handle
                     for i=1:obj.N %changing position of rectangles on every iteration
                         set(obj.phand(i),'Position', [obj.pos(i,1)-0.5 obj.pos(i,2)-0.5 0.3 0.3]);
                         r = (10)*rand(1);
-                        if (r > 9.8)
+                        if (r > 9.8) %Proxy for get infected or not
                             set(obj.phand(i),'FaceColor','r');
+                        end
+                        
+                        infStatus = get(obj.phand(i),'FaceColor');
+                        if infStatus == [1 0 0] %Call to get FaceColor returns an RGB matrix, so
+                                                %red is [1 0 0]
+                            infCountCur = infCountCur + 1;
                         end
                     end
                 end
+                obj.infCount = infCountCur;
                 counter=counter+1;
                 xlim([0 obj.L]);    %setting dimensions of display
                 ylim([0 obj.L]);    %setting dimensions of display
                     
-                %subplot(2,1,2)
+                subplot(2,1,2)
+                plot(obj.timeser, obj.Infected,'r');
                 %pause(0.05) %uncomment to make runtime longer, or add to
                 %max time also
-                drawnow %THIS CALL IS IMPORTANT IT CONTROLS ALL CALLBACKS
+                drawnow %THIS IS IMPORTANT IT CONTROLS ALL CALLBACKS DONT TOUCH
                 
             end
         end
