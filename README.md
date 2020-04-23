@@ -18,4 +18,5 @@ sirVisualClassDef.m: Creates an object of type sirVisualClassDef. Follows
 the format of obj = sirVisualClassDef(N,KE). N is the number of people in
 simulation environment. Make sure it's a square number like 64 or 100. Don't 
 worry about KE for now, just keep it to a number between 0.5 and 2 and you 
-should be fine.
+should be fine. If you named your object obj, the next thing you do to see
+the animation is to input draw(obj) into the command window.

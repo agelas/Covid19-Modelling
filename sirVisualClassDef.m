@@ -7,22 +7,23 @@ classdef sirVisualClassDef < handle
         dt;         %time step size
         otime;      %number of time steps between outputs
         rc=1;       %cutoff distance for interaction
-        pos;        %positions of the atoms in Nx2 array
-        vel;        %velocities of the atoms in Nx2 array
-        m=1;        %masses of each atom
+        pos;        %positions of people in Nx2 array
+        vel;        %velocities of people in Nx2 array
+        m=1;        %"masses" of each person
         phand;      %list of hadles to all circles representing people
         timeser;    %list of times at which data is recorded
-        Eser;       %the energy per atom 
-        KEser;      %the kinetic energy per atom
-        PEser;      %potential energy per atom
+        Eser;       %the energy per person 
+        KEser;      %the kinetic energy per person
+        PEser;      %potential energy per person
         Infected;   %how many infected people
         infCount;   %how many infected people at the timestep
         Susceptible;%how many susceptible people
+        ActivateDistancing = 0; %if social distancing is taking place in simulation
     end
     
     methods
         %constructor
-        function obj=sirVisualClassDef(N,KE) %KE should be between 0.1-0.8 so like 0.5 probably
+        function obj=sirVisualClassDef(N,KE,SD) %KE should be between 0.1-0.8 so like 0.5 probably
             obj.N=N;
             obj.L=sqrt(N);
             avg=KE*2;
@@ -35,10 +36,17 @@ classdef sirVisualClassDef < handle
             obj.pos=obj.pos-0.5;                %shifting indexes to not fall on whole numbers
             obj.vel=randn(obj.N,2)*sqrt(avg);   %distributing random velocities across the people
             obj.infCount = 0;
+            obj.ActivateDistancing=SD;        %if social distancing is taken into account
             
         end
         
         function obj=step(obj)
+            if obj.ActivateDistancing == 1
+                reduceMovement = 1.5;
+            else
+                reduceMovement = 1;
+            end
+            
             velocityFirst=obj.vel;              %filling in velocityFirst for movement calculations
             
             for i=1:obj.N                       %looping through all other people in simulation
@@ -123,8 +131,8 @@ classdef sirVisualClassDef < handle
                 Fix=sum(Fix);   %summing all the x forces
                 Fiy=sum(Fiy);   %summing all the y forces
 
-                obj.vel(i,1)=obj.vel(i,1)+obj.dt*Fix;   %updating x velocity
-                obj.vel(i,2)=obj.vel(i,2)+obj.dt*Fiy;   %updating y velocity
+                obj.vel(i,1)=(obj.vel(i,1)+obj.dt*Fix)/reduceMovement;   %updating x velocity
+                obj.vel(i,2)=(obj.vel(i,2)+obj.dt*Fiy)/reduceMovement;   %updating y velocity
 
                 obj.pos(i,1)=obj.pos(i,1)+obj.dt*obj.vel(i,1);  %updating x coordinate
                 obj.pos(i,2)=obj.pos(i,2)+obj.dt*obj.vel(i,2);  %updating y coordinate
@@ -154,12 +162,12 @@ classdef sirVisualClassDef < handle
             obj.t=obj.t+obj.dt;              %updating current time
         end
     
-        function [k,p,e]=draw(obj)
+        function draw(obj)
             subplot(2,1,1);
             set(gca,'Color','k','XTick',[],'YTick',[]);
             
             counter=1;
-            while obj.t<2 %2/dt is the number of iterations simulation runs
+            while obj.t<1.5 %2/dt is the number of iterations simulation runs
                 %subplot(2,1,1);
                 
                 infCountCur = 0;
@@ -172,8 +180,8 @@ classdef sirVisualClassDef < handle
                 else
                     for i=1:obj.N %changing position of rectangles on every iteration
                         set(obj.phand(i),'Position', [obj.pos(i,1)-0.5 obj.pos(i,2)-0.5 0.3 0.3]);
-                        r = (10)*rand(1);
-                        if (r > 9.8) %Proxy for get infected or not
+                        r = binornd(1,0.03); %Bernoulli is just binomial with N = 1.
+                        if (r == 1) %Proxy for get infected or not
                             set(obj.phand(i),'FaceColor','r');
                         end
                         
