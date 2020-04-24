@@ -9,7 +9,6 @@ classdef sirVisualClassDef < handle
         rc=1;       %cutoff distance for interaction
         pos;        %positions of people in Nx2 array
         vel;        %velocities of people in Nx2 array
-        m=1;        %"masses" of each person
         phand;      %list of hadles to all circles representing people
         timeser;    %list of times at which data is recorded
         Eser;       %the energy per person 
@@ -17,8 +16,10 @@ classdef sirVisualClassDef < handle
         PEser;      %potential energy per person
         Infected;   %how many infected people
         infCount;   %how many infected people at the timestep
+        chanceInfection; %individual person's chance of getting infected
+        logicalInfected; %logical array detailing whether person is infected
         Susceptible;%how many susceptible people
-        ActivateDistancing = 0; %if social distancing is taking place in simulation
+        ACTIVATE_DISTANCING = 0; %if social distancing is taking place in simulation
     end
     
     methods
@@ -36,73 +37,62 @@ classdef sirVisualClassDef < handle
             obj.pos=obj.pos-0.5;                %shifting indexes to not fall on whole numbers
             obj.vel=randn(obj.N,2)*sqrt(avg);   %distributing random velocities across the people
             obj.infCount = 0;
-            obj.ActivateDistancing=SD;        %if social distancing is taken into account
+            obj.chanceInfection = zeros(1, obj.N);
+            obj.logicalInfected = zeros(1, obj.N);
+            obj.ACTIVATE_DISTANCING=SD;        %if social distancing is taken into account
+            
+            %Inserting an infected person into the population
+            randomUnluckyPerson = floor((obj.N - 1)*rand(1) + 1)
+            obj.logicalInfected(randomUnluckyPerson) = 1;
             
         end
         
         function obj=step(obj)
-            if obj.ActivateDistancing == 1
-                reduceMovement = 1.5;
-            else
-                reduceMovement = 1;
-            end
-            
+    
             velocityFirst=obj.vel;              %filling in velocityFirst for movement calculations
             
             for i=1:obj.N                       %looping through all other people in simulation
                 
-                obj.pos(i,1)=obj.pos(i,1)+obj.dt*obj.vel(i,1);  %updating x coordinate
-                obj.pos(i,2)=obj.pos(i,2)+obj.dt*obj.vel(i,2);  %updating y coordinate
+                obj.pos(i,1)=normalUpdate(obj,obj.pos(i,1),obj.vel(i,1));  %updating x coordinate
+                obj.pos(i,2)=normalUpdate(obj,obj.pos(i,2),obj.vel(i,2));  %updating y coordinate
                 
-                rij=zeros(1, obj.N);  %radius to atoms within boundary contributing to force
-                rijx=zeros(1, obj.N); %x-distance to atoms within boundary
-                rijy=zeros(1, obj.N); %y-distance to atoms within boundary
+                rij=zeros(1, obj.N);  %initialize radius to atoms within boundary contributing to force
+                rijx=zeros(1, obj.N); %initialize x-distance to atoms within boundary
+                rijy=zeros(1, obj.N); %initialize y-distance to atoms within boundary
                 
                 Fix=zeros(1, obj.N);
                 Fiy=zeros(1, obj.N);
                 
                 potentialEnormal=zeros(1, obj.N); %potential energy from within boundaries
                 
-                if obj.pos(i,1)<0   %Checking boundary conditions
-                    obj.pos(i,1)=obj.pos(i,1)+obj.L;
-                end
+                checkBoundaryConditions(obj, obj.pos(i,1), obj.pos(i,2),i); %Boundary corrections for people
                 
-                if obj.pos(i,2)<0   %Checking boundary conditions
-                    obj.pos(i,2)=obj.pos(i,2)+obj.L;
-                end
-
-                if obj.pos(i,1)>obj.L   %Checking boundary conditions
-                    obj.pos(i,1)=obj.pos(i,1)-obj.L;
-                end
-
-                if obj.pos(i,2)>obj.L   %Checking boundary conditions
-                    obj.pos(i,2)=obj.pos(i,2)-obj.L;
-                end
-                
-                for j=1:obj.N %Looping through all other points for distance calcs
+                for j=1:obj.N %Looping through all other people for distance calcs
                        
                     rijx(j)= obj.pos(j,1)-obj.pos(i,1); %x distance is recorded
                     rijy(j)= obj.pos(j,2)-obj.pos(i,2); %y distance is recorded
                     
-                    
-                    if rijx(j)>obj.L/2  %past boundary forces
+                    if rijx(j)>obj.L/2  %x contribution through boundary
                         rijx(j)=rijx(j)-obj.L;
-                    
-                    elseif rijx(j)<-obj.L/2  %past boundary force
-                        rijx(j)=rijx(j)+obj.L;
-                        
+                    elseif rijx(j)<-obj.L/2  %x contribution through boundary
+                        rijx(j)=rijx(j)+obj.L;    
                     end
                     
-                    if rijy(j)>obj.L/2  %past boundary forces
+                    if rijy(j)>obj.L/2  %y contribution through boundary
                         rijy(j)=rijy(j)-obj.L; 
-                       
-                    elseif rijy(j)<-obj.L/2  %past boundary forces
+                    elseif rijy(j)<-obj.L/2  %y contribution through boundary 
                         rijy(j)=rijy(j)+obj.L;
-                        
                     end
                     
-                    if sqrt((rijx(j))^2+(rijy(j)^2))<=obj.rc   %Checking if distance is within 2.5
-                        rij(j)=sqrt((rijx(j))^2+(rijy(j)^2));  %If within range, distance is recorded 
+                    if sqrt((rijx(j))^2+(rijy(j)^2))<=obj.rc   %Checking if distance is within cutoff distance
+                        rij(j)=sqrt((rijx(j))^2+(rijy(j)^2));  %If within range, distance is recorded
+                        if(obj.logicalInfected(j) == 1) %Person in radius needs to also be infected
+                            chanceInf = 0.01;
+                            if obj.ACTIVATE_DISTANCING == 1
+                                chanceInf = 0.002;
+                            end
+                            obj.chanceInfection(i) = obj.chanceInfection(i) + chanceInf; 
+                        end
                     else
                         rij(j)=0;
                     end
@@ -116,7 +106,12 @@ classdef sirVisualClassDef < handle
                     end    
                 end
                 
-                %finding total potential energy for the i atom
+                r = binornd(1,obj.chanceInfection(i)); %Bernoulli distribution is just binomial distribution with N = 1.
+                if (r == 1)
+                    obj.logicalInfected(i) = 1; %Person is now infected
+                end
+                
+                %finding total potential energy for the i person
                 for k=1:length(rij)
                     if rij(k)==0
                         potentialEnormal(k)=0;
@@ -131,17 +126,15 @@ classdef sirVisualClassDef < handle
                 Fix=sum(Fix);   %summing all the x forces
                 Fiy=sum(Fiy);   %summing all the y forces
 
-                obj.vel(i,1)=(obj.vel(i,1)+obj.dt*Fix)/reduceMovement;   %updating x velocity
-                obj.vel(i,2)=(obj.vel(i,2)+obj.dt*Fiy)/reduceMovement;   %updating y velocity
+                obj.vel(i,1)=velocityUpdate(obj,obj.vel(i,1),Fix);   %updating x velocity
+                obj.vel(i,2)=velocityUpdate(obj,obj.vel(i,2),Fiy);   %updating y velocity
 
-                obj.pos(i,1)=obj.pos(i,1)+obj.dt*obj.vel(i,1);  %updating x coordinate
-                obj.pos(i,2)=obj.pos(i,2)+obj.dt*obj.vel(i,2);  %updating y coordinate
+                obj.pos(i,1)=normalUpdate(obj,obj.pos(i,1),obj.vel(i,1));  %updating x coordinate again to make more lively
+                obj.pos(i,2)=normalUpdate(obj,obj.pos(i,2),obj.vel(i,2));  %updating y coordinate
                 
             end
             velocitySecond=obj.vel; %second velocity to hold updated velocity for kinetic evergy calculations
-            
             velocityMean=(velocityFirst+velocitySecond)./2; %taking the mean of the velocities
-            
             netVelocity=sqrt(velocityMean(:,1).^2+velocityMean(:,2).^2);   %taking the net velocity 
             
             KE=0.5.*(netVelocity.^2);   %calculatingn KE accoring to 0.5mv^2
@@ -150,26 +143,54 @@ classdef sirVisualClassDef < handle
             Energy(i)=PE(i)+KE(i);      %Calculating total energy
             
             obj.KEser(end+1)=mean(mean(KE)); %filling in KEser array
-            
             obj.PEser(end+1)=mean(PE);       %filling in PEser array
-            
             obj.Eser(end+1)=mean(Energy);    %filling in Eser array
-            
             obj.timeser(end+1)=obj.t;        %filling in timeser array
-            
-            obj.Infected(end+1)=obj.infCount;
-            
+            obj.Infected(end+1)=obj.infCount;%updating infected count
+            obj.Susceptible(end+1)=obj.N - obj.infCount; %updating susceptible count
             obj.t=obj.t+obj.dt;              %updating current time
         end
     
+        function updatedPosition = normalUpdate(obj, curPos, curVel)
+            updatedPosition = curPos + obj.dt * curVel;
+        end
+        
+        function updatedVelocity = velocityUpdate(obj, curVel, Force)
+            if obj.ACTIVATE_DISTANCING == 1
+                reduceMovement = 1.3;
+            else
+                reduceMovement = 1;
+            end
+            updatedVelocity = (curVel + obj.dt*Force)/reduceMovement;
+        end
+        
+        function checkBoundaryConditions(obj, posX, posY, index)
+            if posX<0   %Checking boundary conditions
+                obj.pos(index,1)=obj.pos(index,1)+obj.L;
+            end
+                
+            if posY<0   %Checking boundary conditions
+                obj.pos(index,2)=obj.pos(index,2)+obj.L;
+            end
+
+            if posX>obj.L   %Checking boundary conditions
+                obj.pos(index,1)=obj.pos(index,1)-obj.L;
+            end
+
+            if posY>obj.L   %Checking boundary conditions
+                obj.pos(index,2)=obj.pos(index,2)-obj.L;
+            end
+        end
+        
         function draw(obj)
             subplot(2,1,1);
+            axis equal
             set(gca,'Color','k','XTick',[],'YTick',[]);
             
             counter=1;
-            while obj.t<1.5 %2/dt is the number of iterations simulation runs
-                %subplot(2,1,1);
-                
+            while obj.t<1 % <- /dt is the number of iterations simulation runs
+                subplot(2,1,1);
+   
                 infCountCur = 0;
 
                 obj.step;
@@ -180,15 +201,15 @@ classdef sirVisualClassDef < handle
                 else
                     for i=1:obj.N %changing position of rectangles on every iteration
                         set(obj.phand(i),'Position', [obj.pos(i,1)-0.5 obj.pos(i,2)-0.5 0.3 0.3]);
-                        r = binornd(1,0.03); %Bernoulli is just binomial with N = 1.
-                        if (r == 1) %Proxy for get infected or not
+                      
+                        if (obj.logicalInfected(i) == 1) %Turn dot red if infected
                             set(obj.phand(i),'FaceColor','r');
                         end
                         
                         infStatus = get(obj.phand(i),'FaceColor');
                         if infStatus == [1 0 0] %Call to get FaceColor returns an RGB matrix, so
                                                 %red is [1 0 0]
-                            infCountCur = infCountCur + 1;
+                            infCountCur = infCountCur + 1; %Infection count updates are handled here
                         end
                     end
                 end
@@ -198,6 +219,7 @@ classdef sirVisualClassDef < handle
                 ylim([0 obj.L]);    %setting dimensions of display
                     
                 subplot(2,1,2)
+                
                 plot(obj.timeser, obj.Infected,'r');
                 %pause(0.05) %uncomment to make runtime longer, or add to
                 %max time also
