@@ -16,10 +16,13 @@ classdef sirVisualClassDef < handle
         PEser;      %potential energy per person
         Infected;   %how many infected people
         infCount;   %how many infected people at the timestep
+        Ages;       %ages of people in simulation
         chanceInfection; %individual person's chance of getting infected
         logicalInfected; %logical array detailing whether person is infected
         Susceptible;%how many susceptible people
         ACTIVATE_DISTANCING = 0; %if social distancing is taking place in simulation
+        INDIVIDUAL_DISTANCING; %array that thresholds whether a person starts distancing
+        
     end
     
     methods
@@ -36,14 +39,16 @@ classdef sirVisualClassDef < handle
             obj.pos=[posx',posy'];              %filling in pos array
             obj.pos=obj.pos-0.5;                %shifting indexes to not fall on whole numbers
             obj.vel=randn(obj.N,2)*sqrt(avg);   %distributing random velocities across the people
-            obj.infCount = 0;
+            obj.Ages=floor(5+(85-5).*(rand(obj.N,1))); %random distribution of ages across the people
             obj.chanceInfection = zeros(1, obj.N);
             obj.logicalInfected = zeros(1, obj.N);
             obj.ACTIVATE_DISTANCING=SD;        %if social distancing is taken into account
+            obj.INDIVIDUAL_DISTANCING = zeros(1, obj.N);
             
             %Inserting an infected person into the population
-            randomUnluckyPerson = floor((obj.N - 1)*rand(1) + 1)
+            randomUnluckyPerson = floor((obj.N - 1)*rand(1) + 1);
             obj.logicalInfected(randomUnluckyPerson) = 1;
+            obj.infCount = 1;
             
         end
         
@@ -87,7 +92,7 @@ classdef sirVisualClassDef < handle
                     if sqrt((rijx(j))^2+(rijy(j)^2))<=obj.rc   %Checking if distance is within cutoff distance
                         rij(j)=sqrt((rijx(j))^2+(rijy(j)^2));  %If within range, distance is recorded
                         if(obj.logicalInfected(j) == 1) %Person in radius needs to also be infected
-                            chanceInf = 0.01;
+                            chanceInf = (1 - exp(-0.6*(obj.infCount/obj.N))); %0.6 seems to be R0 in Westchester
                             if obj.ACTIVATE_DISTANCING == 1
                                 chanceInf = 0.002;
                             end
@@ -107,8 +112,9 @@ classdef sirVisualClassDef < handle
                 end
                 
                 r = binornd(1,obj.chanceInfection(i)); %Bernoulli distribution is just binomial distribution with N = 1.
-                if (r == 1)
-                    obj.logicalInfected(i) = 1; %Person is now infected
+                if (r == 1) && (obj.logicalInfected(i) == 0) %Second part of logical is so we don't double count
+                    typeInf = infectedType(obj, i);
+                    obj.logicalInfected(i) = typeInf; %Person is now infected
                 end
                 
                 %finding total potential energy for the i person
@@ -126,8 +132,9 @@ classdef sirVisualClassDef < handle
                 Fix=sum(Fix);   %summing all the x forces
                 Fiy=sum(Fiy);   %summing all the y forces
 
-                obj.vel(i,1)=velocityUpdate(obj,obj.vel(i,1),Fix);   %updating x velocity
-                obj.vel(i,2)=velocityUpdate(obj,obj.vel(i,2),Fiy);   %updating y velocity
+                threshold = obj.INDIVIDUAL_DISTANCING(i);
+                obj.vel(i,1)=velocityUpdate(obj,obj.vel(i,1),Fix,threshold,i);   %updating x velocity
+                obj.vel(i,2)=velocityUpdate(obj,obj.vel(i,2),Fiy,threshold,i);   %updating y velocity
 
                 obj.pos(i,1)=normalUpdate(obj,obj.pos(i,1),obj.vel(i,1));  %updating x coordinate again to make more lively
                 obj.pos(i,2)=normalUpdate(obj,obj.pos(i,2),obj.vel(i,2));  %updating y coordinate
@@ -155,12 +162,15 @@ classdef sirVisualClassDef < handle
             updatedPosition = curPos + obj.dt * curVel;
         end
         
-        function updatedVelocity = velocityUpdate(obj, curVel, Force)
-            if obj.ACTIVATE_DISTANCING == 1
+        function updatedVelocity = velocityUpdate(obj, curVel, Force, infected, index)
+            reduceMovement = 1;
+            if (obj.ACTIVATE_DISTANCING == 1) 
                 reduceMovement = 1.3;
-            else
-                reduceMovement = 1;
             end
+            if (obj.logicalInfected(index) == 3) || (infected >= 4)
+                reduceMovement = 1.3;
+            end
+            
             updatedVelocity = (curVel + obj.dt*Force)/reduceMovement;
         end
         
@@ -182,13 +192,39 @@ classdef sirVisualClassDef < handle
             end
         end
         
+        function typeInf = infectedType(obj, index)
+            %Multinomial distribution for whether infected person will be
+            %very symptomatic (1), mild symptomatic (2), or asymptomatic(3)
+            age = obj.Ages(index);
+            if(age <= 18)
+                asymProb = .7;
+                mildProb = .2;
+                symProb = .1;
+            elseif (age > 18) && (age <= 40)
+                asymProb = .55;
+                mildProb = .25;
+                symProb = .2;
+            elseif (age > 40) && (age <= 60)
+                asymProb = .18;
+                mildProb = .3;
+                symProb = .52;
+            else
+                asymProb = .05;
+                mildProb = .15;
+                symProb = .8;
+            end
+            
+            pd = makedist('Multinomial', 'probabilities', [asymProb mildProb symProb]);
+            typeInf = random(pd);
+        end
+        
         function draw(obj)
             subplot(2,1,1);
             axis equal
             set(gca,'Color','k','XTick',[],'YTick',[]);
             
             counter=1;
-            while obj.t<1 % <- /dt is the number of iterations simulation runs
+            while obj.t<2 % <- /dt is the number of iterations simulation runs
                 subplot(2,1,1);
    
                 infCountCur = 0;
@@ -202,14 +238,20 @@ classdef sirVisualClassDef < handle
                     for i=1:obj.N %changing position of rectangles on every iteration
                         set(obj.phand(i),'Position', [obj.pos(i,1)-0.5 obj.pos(i,2)-0.5 0.3 0.3]);
                       
-                        if (obj.logicalInfected(i) == 1) %Turn dot red if infected
-                            set(obj.phand(i),'FaceColor','r');
+                        if (obj.logicalInfected(i) > 0) %change dot color if mild/symptomatic
+                            set(obj.phand(i),'FaceColor','y'); %yellow means they can spread
+                            if(obj.INDIVIDUAL_DISTANCING(i) < 4) %takes a while to show symptoms
+                                obj.INDIVIDUAL_DISTANCING(i) = obj.INDIVIDUAL_DISTANCING(i) + 1;
+                            else
+                                if(obj.logicalInfected(i) == 2) || (obj.logicalInfected(i) == 3) %mild and symptomatic turn red
+                                    set(obj.phand(i),'FaceColor','r'); %red means symptomatic 
+                                end
+                            end       
                         end
                         
-                        infStatus = get(obj.phand(i),'FaceColor');
-                        if infStatus == [1 0 0] %Call to get FaceColor returns an RGB matrix, so
-                                                %red is [1 0 0]
-                            infCountCur = infCountCur + 1; %Infection count updates are handled here
+                        infStatus = obj.logicalInfected(i);
+                        if(infStatus > 0)
+                            infCountCur = infCountCur + 1;
                         end
                     end
                 end
