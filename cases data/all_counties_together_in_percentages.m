@@ -57,6 +57,7 @@ hold on
 plot(dates, y);
 
 % add legend and axis labels
+title('Percent Infected by Day in Selected New York Counties');
 legend({'Dutchess, Rural', 'Rockland, Suburban', 'Suffolk, Suburban', 'Westchester, Suburban', 'NYC, Urban'})
 ylabel('Percentage of county population infected');
 xlabel('Days since first NY case');
