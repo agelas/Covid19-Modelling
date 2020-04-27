@@ -35,10 +35,25 @@ testing_present = 0;
 %(ie hundreds) of times to draw conclusions from it. The function
 %drawInfected only plots the number of infected people and not the visual
 %animation part of disease spread. 
-for i=1:100
+
+%%%%%%%%%%%%%%%
+   runs = 10  
+%%%%%%%%%%%%%%%
+
+collection = zeros(runs,150);
+figure(1)
+for i=1:runs
     i
     hold on
     sirVisual=sirVisualClassDef(number_people, interaction_parameter, social_distancing, social_distancing_threshold, testing_present);
-    drawInfected(sirVisual);   
+    %drawInfected(sirVisual); 
+    collection(i,:) = drawInfected(sirVisual);
 end
 hold off
+
+figure(2)
+meanMatrix = zeros(1,150);
+for i=1:150
+    meanMatrix(i) = mean(collection(:,i));
+end
+plot([1:150], meanMatrix);

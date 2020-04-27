@@ -311,7 +311,7 @@ classdef sirVisualClassDef < handle
             end
         end
         
-        function drawInfected(obj)
+        function infectionMatrix = drawInfected(obj)
             counter=1;
             while obj.t<1.5 % <- /dt is the number of iterations simulation runs
                 infCountCur = 0;
@@ -329,6 +329,7 @@ classdef sirVisualClassDef < handle
             ylabel('Infected People');
             drawnow %THIS IS IMPORTANT IT CONTROLS ALL CALLBACKS DONT TOUCH
             end
+            infectionMatrix = obj.Infected;
         end
     end
 end
