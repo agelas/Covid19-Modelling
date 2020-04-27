@@ -21,6 +21,7 @@ classdef sirVisualClassDef < handle
         logicalInfected; %logical array detailing whether person is infected
         Susceptible;%how many susceptible people
         ACTIVATE_DISTANCING = 0; %if social distancing is taking place in simulation
+        START_DISTANCING_THRESHOLD;
         INDIVIDUAL_DISTANCING; %array that thresholds whether a person starts distancing
                                %because they're either too sick or just
                                %smart
@@ -32,7 +33,7 @@ classdef sirVisualClassDef < handle
     
     methods
         %constructor
-        function obj=sirVisualClassDef(N,KE,SD,T) %KE should be between 0.1-0.8 so like 0.5 probably
+        function obj=sirVisualClassDef(N,KE,SD,SDT,T)
             obj.N=N;
             obj.L=sqrt(N);
             avg=KE*2;
@@ -49,8 +50,9 @@ classdef sirVisualClassDef < handle
             obj.logicalInfected = zeros(1, obj.N);
             obj.ACTIVATE_DISTANCING=SD;        %if social distancing is taken into account
             obj.INDIVIDUAL_DISTANCING = zeros(1, obj.N);
-            obj. ACTIVATE_TESTING = T; %if testing is present
+            obj.ACTIVATE_TESTING = T; %if testing is present
             obj.INDIVIDUAL_DETECTED = zeros(1, obj.N); %0->not detected
+            obj.START_DISTANCING_THRESHOLD = SDT;
             
             %Inserting an infected person into the population
             randomUnluckyPerson = floor((obj.N - 1)*rand(1) + 1);
@@ -60,6 +62,12 @@ classdef sirVisualClassDef < handle
         end
         
         function obj=step(obj)
+            if (obj.START_DISTANCING_THRESHOLD > 0)
+                percentInfected = obj.infCount/obj.N*100;
+                if (percentInfected > obj.START_DISTANCING_THRESHOLD)
+                    obj.ACTIVATE_DISTANCING = 1;
+                end
+            end
     
             velocityFirst=obj.vel;              %filling in velocityFirst for movement calculations
             
@@ -99,9 +107,12 @@ classdef sirVisualClassDef < handle
                     if sqrt((rijx(j))^2+(rijy(j)^2))<=obj.rc   %Checking if distance is within cutoff distance
                         rij(j)=sqrt((rijx(j))^2+(rijy(j)^2));  %If within range, distance is recorded
                         if(obj.logicalInfected(j) == 1) %Person in radius needs to also be infected
-                            chanceInf = (1 - exp(-0.6*(obj.infCount/obj.N))); %0.6 seems to be R0 in Westchester
+                            chanceInf = (1 - exp(-0.75*(obj.infCount/obj.N))); %0.75 seems to be R0 in all localities
                             if obj.ACTIVATE_DISTANCING == 1
                                 chanceInf = 0.002;
+                            end
+                            if (obj.INDIVIDUAL_DETECTED(j) == 1) && (obj.INDIVIDUAL_DISTANCING(j) > 2)
+                                obj.chanceInfection(i) = 0;
                             end
                             obj.chanceInfection(i) = obj.chanceInfection(i) + chanceInf; 
                         end
@@ -291,13 +302,36 @@ classdef sirVisualClassDef < handle
                     
                 subplot(2,1,2)
                 
-                plot(obj.timeser, obj.Infected,'r');
+                plot([1:length(obj.Infected)], obj.Infected,'r');
+                xlabel('Days');
                 ylabel('Infected People');
                 %pause(0.05) %uncomment to make runtime longer, or add to
                 %max time also
                 drawnow %THIS IS IMPORTANT IT CONTROLS ALL CALLBACKS DONT TOUCH
                 
             end
+        end
+        
+        function infectionMatrix = drawInfected(obj)
+            counter=1;
+            while obj.t<1.5 % <- /dt is the number of iterations simulation runs
+                infCountCur = 0;
+                obj.step;
+                for i=1:obj.N
+                    infStatus = obj.logicalInfected(i);
+                    if(infStatus > 0)
+                        infCountCur = infCountCur + 1;
+                    end
+                end
+                obj.infCount = infCountCur;
+                counter=counter+1;
+            
+            plot([1:length(obj.Infected)], obj.Infected,'r');
+            ylabel('Infected People');
+            xlabel('Days');
+            drawnow %THIS IS IMPORTANT IT CONTROLS ALL CALLBACKS DONT TOUCH
+            end
+            infectionMatrix = obj.Infected;
         end
     end
 end
