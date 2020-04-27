@@ -1,5 +1,5 @@
 %The sirVisualClassDef is a bit messy to handle, so this script attempts to
-%make it very simple to help simplify the process of making it run. Below
+%make it very simple to help the process of making it run go smoother. Below
 %is a description of the 5 inputs sirVisualClassDef takes to get it running.
 
 %Input 1: The first one is how many people are in the simulation. Please
@@ -23,9 +23,9 @@
 %green if they test positive. 
  
 number_people = 100;
-interaction_parameter = 1.2; %1.2 for urban, 1 for suburban, 0.8 for rural
+interaction_parameter = 0.8; %1.2 for urban, 1 for suburban, 0.8 for rural
 social_distancing = 0;
-social_distancing_threshold = 10; %Currently set to 20% before social distancing kicks in
+social_distancing_threshold = 15; %Currently set to 20% before social distancing kicks in
 testing_present = 0;
 
 %Uncomment the next three lines if you want to see it run with the
