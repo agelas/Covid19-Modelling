@@ -6,7 +6,7 @@ classdef sirVisualClassDef < handle
         t;          %current number of time steps completed
         dt;         %time step size
         otime;      %number of time steps between outputs
-        rc=1;       %cutoff distance for interaction
+        rc=1.5;     %cutoff distance for interaction
         pos;        %positions of people in Nx2 array
         vel;        %velocities of people in Nx2 array
         phand;      %list of hadles to all circles representing people
@@ -22,12 +22,17 @@ classdef sirVisualClassDef < handle
         Susceptible;%how many susceptible people
         ACTIVATE_DISTANCING = 0; %if social distancing is taking place in simulation
         INDIVIDUAL_DISTANCING; %array that thresholds whether a person starts distancing
+                               %because they're either too sick or just
+                               %smart
+        ACTIVATE_TESTING = 0; %if widespread testing is implemented 
+        INDIVIDUAL_DETECTED; %array that holds whether a person has been
+                             %detected as sick or not
         
     end
     
     methods
         %constructor
-        function obj=sirVisualClassDef(N,KE,SD) %KE should be between 0.1-0.8 so like 0.5 probably
+        function obj=sirVisualClassDef(N,KE,SD,T) %KE should be between 0.1-0.8 so like 0.5 probably
             obj.N=N;
             obj.L=sqrt(N);
             avg=KE*2;
@@ -44,6 +49,8 @@ classdef sirVisualClassDef < handle
             obj.logicalInfected = zeros(1, obj.N);
             obj.ACTIVATE_DISTANCING=SD;        %if social distancing is taken into account
             obj.INDIVIDUAL_DISTANCING = zeros(1, obj.N);
+            obj. ACTIVATE_TESTING = T; %if testing is present
+            obj.INDIVIDUAL_DETECTED = zeros(1, obj.N); %0->not detected
             
             %Inserting an infected person into the population
             randomUnluckyPerson = floor((obj.N - 1)*rand(1) + 1);
@@ -115,6 +122,12 @@ classdef sirVisualClassDef < handle
                 if (r == 1) && (obj.logicalInfected(i) == 0) %Second part of logical is so we don't double count
                     typeInf = infectedType(obj, i);
                     obj.logicalInfected(i) = typeInf; %Person is now infected
+                end
+                
+                if (obj.ACTIVATE_TESTING == 1)
+                    if(obj.logicalInfected(i) > 0) && (obj.INDIVIDUAL_DETECTED(i) == 0) %%do testing if infected
+                        obj.INDIVIDUAL_DETECTED(i) = updateTesting(obj, i);
+                    end
                 end
                 
                 %finding total potential energy for the i person
@@ -218,13 +231,23 @@ classdef sirVisualClassDef < handle
             typeInf = random(pd);
         end
         
+        function detected = updateTesting(obj, i)
+            if(obj.ACTIVATE_TESTING == 1)
+                if (obj.INDIVIDUAL_DETECTED(i) == 0)
+                detected =  binornd(1,.11); %so this is annoying you're almost guaranteed to be detected
+                end
+            else
+                detected = 0;
+            end
+        end
+        
         function draw(obj)
             subplot(2,1,1);
             axis equal
             set(gca,'Color','k','XTick',[],'YTick',[]);
             
             counter=1;
-            while obj.t<2 % <- /dt is the number of iterations simulation runs
+            while obj.t<1.5 % <- /dt is the number of iterations simulation runs
                 subplot(2,1,1);
    
                 infCountCur = 0;
@@ -243,10 +266,16 @@ classdef sirVisualClassDef < handle
                             if(obj.INDIVIDUAL_DISTANCING(i) < 4) %takes a while to show symptoms
                                 obj.INDIVIDUAL_DISTANCING(i) = obj.INDIVIDUAL_DISTANCING(i) + 1;
                             else
-                                if(obj.logicalInfected(i) == 2) || (obj.logicalInfected(i) == 3) %mild and symptomatic turn red
+                                if((obj.logicalInfected(i) == 2) || (obj.logicalInfected(i) == 3))&&(obj.INDIVIDUAL_DETECTED(i) == 0)
                                     set(obj.phand(i),'FaceColor','r'); %red means symptomatic 
+                                else
+                                    if(obj.INDIVIDUAL_DETECTED(i) == 1)
+                                        set(obj.phand(i),'FaceColor','g'); %green means detected
+                                    else
+                                        set(obj.phand(i),'FaceColor','y'); %guard against logic slips
+                                    end
                                 end
-                            end       
+                            end 
                         end
                         
                         infStatus = obj.logicalInfected(i);
@@ -263,6 +292,7 @@ classdef sirVisualClassDef < handle
                 subplot(2,1,2)
                 
                 plot(obj.timeser, obj.Infected,'r');
+                ylabel('Infected People');
                 %pause(0.05) %uncomment to make runtime longer, or add to
                 %max time also
                 drawnow %THIS IS IMPORTANT IT CONTROLS ALL CALLBACKS DONT TOUCH
