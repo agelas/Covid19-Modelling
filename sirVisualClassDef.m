@@ -302,7 +302,8 @@ classdef sirVisualClassDef < handle
                     
                 subplot(2,1,2)
                 
-                plot(obj.timeser, obj.Infected,'r');
+                plot([1:length(obj.Infected)], obj.Infected,'r');
+                xlabel('Days');
                 ylabel('Infected People');
                 %pause(0.05) %uncomment to make runtime longer, or add to
                 %max time also
@@ -325,8 +326,9 @@ classdef sirVisualClassDef < handle
                 obj.infCount = infCountCur;
                 counter=counter+1;
             
-            plot(obj.timeser, obj.Infected,'r');
+            plot([1:length(obj.Infected)], obj.Infected,'r');
             ylabel('Infected People');
+            xlabel('Days');
             drawnow %THIS IS IMPORTANT IT CONTROLS ALL CALLBACKS DONT TOUCH
             end
             infectionMatrix = obj.Infected;

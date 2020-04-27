@@ -28,8 +28,11 @@ social_distancing = 0;
 social_distancing_threshold = 10; %Currently set to 20% before social distancing kicks in
 testing_present = 0;
 
+%Uncomment the next three lines if you want to see it run with the
+%animantion of people interacting with each other in the simulation
 %sirVisual=sirVisualClassDef(number_people, interaction_parameter, social_distancing, social_distancing_threshold, testing_present); 
 %draw(sirVisual)
+%clear figure
 
 %Since this is a stochastic model, you may need to run the model several
 %(ie hundreds) of times to draw conclusions from it. The function
@@ -56,3 +59,5 @@ for i=1:150
     meanMatrix(i) = mean(collection(:,i));
 end
 plot([1:150], meanMatrix);
+ylabel('Average Infected');
+xlabel('Days');
