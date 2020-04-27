@@ -10,7 +10,7 @@
 [days, cases] = buildCases(growth);
 
 %set up initial conditions on day 1
-Pop = 967506;
+Pop = 294218;
 cases = cases/Pop;
 initCoef = 1;
 Infec = cases(1)*initCoef;
@@ -33,9 +33,11 @@ recvs = linspace(minRecv, maxRecv, numRecv);
 
 % set the markers in which intervention methods show effect (account for
 % incubation period), random values rn
-mark1 = 20;
-mark2 = 27;
-mark3 = 35;
+mark1 = 4;
+mark2 = 8;
+mark3 = 12;
+mark4 = 16;
+mark5 = 28;
 
 %%
 % this command will run the model fitting for the entirety of the data as
@@ -66,11 +68,15 @@ mark3 = 35;
 [ymark2, mark2besty] = trimYData(mark2besty);
 [mark3minR, mark3R0, mark3bestRecv, mark3besty] = fitModel(R0s, recvs, ymark2, mark2, mark3, cases);
 [ymark3, mark3besty] = trimYData(mark3besty);
-[mark4minR, mark4R0, mark4bestRecv, mark4besty] = fitModel(R0s, recvs, ymark3, mark3, days, cases);
-[endy, mark4besty] = trimYData(mark4besty);
+[mark4minR, mark4R0, mark4bestRecv, mark4besty] = fitModel(R0s, recvs, ymark3, mark3, mark4, cases);
+[ymark4, mark4besty] = trimYData(mark4besty);
+[mark5minR, mark5R0, mark5bestRecv, mark5besty] = fitModel(R0s, recvs, ymark4, mark4, mark5, cases);
+[ymark5, mark5besty] = trimYData(mark5besty);
+[mark6minR, mark6R0, mark6bestRecv, mark6besty] = fitModel(R0s, recvs, ymark5, mark5, days, cases);
+[endy, mark6besty] = trimYData(mark6besty);
 
-modelY = [mark1besty;mark2besty;mark3besty;mark4besty;endy];
-coefValues = [mark1R0, mark1bestRecv, mark1minR; mark2R0, mark2bestRecv, mark2minR; mark3R0, mark3bestRecv, mark3minR; mark4R0, mark4bestRecv, mark4minR];
+modelY = [mark1besty;mark2besty;mark3besty;mark4besty;mark5besty;mark6besty;endy];
+coefValues = [mark1R0, mark1bestRecv, mark1minR; mark2R0, mark2bestRecv, mark2minR; mark3R0, mark3bestRecv, mark3minR; mark4R0, mark4bestRecv, mark4minR; mark5R0, mark5bestRecv, mark5minR; mark6R0, mark6bestRecv, mark6minR];
 
 %%
 
@@ -81,7 +87,7 @@ plot(tspan, cases*Pop);
 %plot(tspan, OVbesty(:,2)*Pop);
 plot(tspan, modelY(:,2)*Pop);
 ylim auto;
-legend('Westchester Data', 'SegmentedModel');
+legend('Dutchess Data', 'SegmentedModel');
 xlabel('Days');
 ylabel('Infected Cases');
 %legend('Westchester Data', 'ContinuousModel', 'SegmentedModel');
