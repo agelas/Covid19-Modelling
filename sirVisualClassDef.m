@@ -107,7 +107,7 @@ classdef sirVisualClassDef < handle
                     if sqrt((rijx(j))^2+(rijy(j)^2))<=obj.rc   %Checking if distance is within cutoff distance
                         rij(j)=sqrt((rijx(j))^2+(rijy(j)^2));  %If within range, distance is recorded
                         if(obj.logicalInfected(j) == 1) %Person in radius needs to also be infected
-                            chanceInf = (1 - exp(-0.6*(obj.infCount/obj.N))); %0.6 seems to be R0 in Westchester
+                            chanceInf = (1 - exp(-0.75*(obj.infCount/obj.N))); %0.75 seems to be R0 in all localities
                             if obj.ACTIVATE_DISTANCING == 1
                                 chanceInf = 0.002;
                             end

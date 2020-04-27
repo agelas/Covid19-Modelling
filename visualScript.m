@@ -37,7 +37,7 @@ testing_present = 0;
 %animation part of disease spread. 
 
 %%%%%%%%%%%%%%%
-   runs = 20;  
+   runs = 10;  
 %%%%%%%%%%%%%%%
 
 collection = zeros(runs,150);
