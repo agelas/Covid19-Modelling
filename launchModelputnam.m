@@ -33,12 +33,12 @@ recvs = linspace(minRecv, maxRecv, numRecv);
 
 % set the markers in which intervention methods show effect (account for
 % incubation period), random values rn
+mark1 = 0;
+mark2 = mark1+4;
+mark3 = mark1+8;
+mark4 = mark1+12;
+mark5 = mark1+24;
 mark1 = 1;
-mark2 = 4;
-mark3 = 8;
-mark4 = 12;
-mark5 = 24;
-
 %%
 % this command will run the model fitting for the entirety of the data as
 % one segment
@@ -97,3 +97,7 @@ xlabel('Days');
 ylabel('Infected Cases');
 %legend('Westchester Data', 'ContinuousModel', 'SegmentedModel');
 disp(coefValues); 
+
+%%
+putnamY = modelY(:,2);
+putnamT = tspan;

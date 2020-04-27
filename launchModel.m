@@ -1,20 +1,32 @@
 %% build cases
 
+% the growth data needs to be imported from the csv files for each county
+% separately
+
 
 % setting up the number of cases per day
-% i had a fundamnetal misunderstanding of the ode solvers in MATLAB,
-% so the data still needs to be in total cases per day
 % custom function to build the cases from the day by day growth data
-% compiled
+% extract the time span and the number of infected cases each day from the
+% custom buildCases function
 
 [days, cases] = buildCases(growth);
 
 %set up initial conditions on day 1
+% pop value to be modified for each county
 Pop = 294218;
 cases = cases/Pop;
 initCoef = 1;
 Infec = cases(1)*initCoef;
 yinit = [1, Infec, 0];
+% at the beginning there are 100% susceptible
+% read the first value from the case growth and divide by the total
+% population to get a percentage value (Infec)
+% 0% recovered
+
+
+% the processing and model building process uses percentage instead of pop
+% numbers, so that the data can be easily extracted to compare between
+% counties with different population counts.
 
 
 
@@ -25,24 +37,30 @@ numR0 = 100;
 numRecv = 20;
 minR0 = 0.3;
 minRecv = 0.2;
-maxR0 = 0.8;
+maxR0 = 1;
 maxRecv = 0.5;
 R0s = linspace(minR0, maxR0, numR0);
 recvs = linspace(minRecv, maxRecv, numRecv);
 %%
 
 % set the markers in which intervention methods show effect (account for
-% incubation period), random values rn
-mark1 = 4;
-mark2 = 8;
-mark3 = 12;
-mark4 = 16;
-mark5 = 28;
+% incubation period)
+% the mark number represents how many days since the first case in the
+% country has been identified did the certain state-wide intervention get
+% implemented + a 7 day incubation period to find the day in which each
+% measure's effects are to take place.
 
-%%
-% this command will run the model fitting for the entirety of the data as
-% one segment
-%[OVminR, OVbestR0, OVbestRecv, OVbesty] = fitModel(R0s, recvs, yinit, 1, days, cases);
+% mark1 - Cuomo urges people who can work from home to do so
+% mark2 - Large gatherings are banned (500+ people)
+% mark3 - Gatherings are limited to 50, restaurants and other rec
+% facilities such as theaters, gyms, bars, etc. are to be closed
+% mark4 - Non essential businesses are closed
+% mark5 - requires mask wearing in public
+mark1 = 7;
+mark2 = mark1+4;
+mark3 = mark1+8;
+mark4 = mark1+12;
+mark5 = mark1+24;
 
 %%
 
@@ -76,6 +94,8 @@ mark5 = 28;
 [endy, mark6besty] = trimYData(mark6besty);
 
 modelY = [mark1besty;mark2besty;mark3besty;mark4besty;mark5besty;mark6besty;endy];
+% coefvalues compiles the best fit R0 and recv coefficients for each time
+% segment (between intervention measures)
 coefValues = [mark1R0, mark1bestRecv, mark1minR; mark2R0, mark2bestRecv, mark2minR; mark3R0, mark3bestRecv, mark3minR; mark4R0, mark4bestRecv, mark4minR; mark5R0, mark5bestRecv, mark5minR; mark6R0, mark6bestRecv, mark6minR];
 
 %%
@@ -83,12 +103,18 @@ coefValues = [mark1R0, mark1bestRecv, mark1minR; mark2R0, mark2bestRecv, mark2mi
 %plot to visualize values as a sanity check
 tspan = 1:days;
 hold on;
+% multiply by Pop in plot to show the actual number of infected people
+% instead of a percentage.
 plot(tspan, cases*Pop);
-%plot(tspan, OVbesty(:,2)*Pop);
 plot(tspan, modelY(:,2)*Pop);
 ylim auto;
-legend('Dutchess Data', 'SegmentedModel');
+legend('JHU Data', 'Generated Model');
 xlabel('Days');
 ylabel('Infected Cases');
-%legend('Westchester Data', 'ContinuousModel', 'SegmentedModel');
 disp(coefValues); 
+
+%%
+
+% store each county's infected data separately in their own variable to
+% compile and plot together
+dutchessY = modelY(:,2);
