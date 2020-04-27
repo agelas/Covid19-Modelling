@@ -25,7 +25,7 @@
 number_people = 100;
 interaction_parameter = 1.2; %1.2 for urban, 1 for suburban, 0.8 for rural
 social_distancing = 0;
-social_distancing_threshold = 20; %Currently set to 20% before social distancing kicks in
+social_distancing_threshold = 10; %Currently set to 20% before social distancing kicks in
 testing_present = 0;
 
 %sirVisual=sirVisualClassDef(number_people, interaction_parameter, social_distancing, social_distancing_threshold, testing_present); 
@@ -37,16 +37,15 @@ testing_present = 0;
 %animation part of disease spread. 
 
 %%%%%%%%%%%%%%%
-   runs = 10  
+   runs = 20;  
 %%%%%%%%%%%%%%%
 
 collection = zeros(runs,150);
 figure(1)
 for i=1:runs
-    i
+    i %the computations can be intensive so this spits out the iteration so you can check your computer isn't hung
     hold on
     sirVisual=sirVisualClassDef(number_people, interaction_parameter, social_distancing, social_distancing_threshold, testing_present);
-    %drawInfected(sirVisual); 
     collection(i,:) = drawInfected(sirVisual);
 end
 hold off
