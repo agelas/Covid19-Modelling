@@ -107,11 +107,11 @@ classdef sirVisualClassDef < handle
                     if sqrt((rijx(j))^2+(rijy(j)^2))<=obj.rc   %Checking if distance is within cutoff distance
                         rij(j)=sqrt((rijx(j))^2+(rijy(j)^2));  %If within range, distance is recorded
                         if(obj.logicalInfected(j) == 1) %Person in radius needs to also be infected
-                            chanceInf = (1 - exp(-0.75*(obj.infCount/obj.N))); %0.75 seems to be R0 in all localities
+                            chanceInf = (1 - exp(-0.25*(obj.infCount/obj.N))); %0.75 seems to be R0 in all localities
                             if obj.ACTIVATE_DISTANCING == 1
                                 chanceInf = 0.002;
                             end
-                            if (obj.INDIVIDUAL_DETECTED(j) == 1) && (obj.INDIVIDUAL_DISTANCING(j) > 2)
+                            if (obj.INDIVIDUAL_DETECTED(j) == 1) && (obj.INDIVIDUAL_DISTANCING(j) > 1)
                                 obj.chanceInfection(i) = 0;
                             end
                             obj.chanceInfection(i) = obj.chanceInfection(i) + chanceInf; 
@@ -253,13 +253,13 @@ classdef sirVisualClassDef < handle
         end
         
         function draw(obj)
-            subplot(2,1,1);
+            %subplot(2,1,1);
             axis equal
             set(gca,'Color','k','XTick',[],'YTick',[]);
             
             counter=1;
             while obj.t<1.5 % <- /dt is the number of iterations simulation runs
-                subplot(2,1,1);
+                %subplot(2,1,1);
    
                 infCountCur = 0;
 
@@ -300,12 +300,12 @@ classdef sirVisualClassDef < handle
                 xlim([0 obj.L]);    %setting dimensions of display
                 ylim([0 obj.L]);    %setting dimensions of display
                     
-                subplot(2,1,2)
+                %subplot(2,1,2)
                 
-                plot([1:length(obj.Infected)], obj.Infected,'r');
-                xlabel('Days');
-                ylabel('Infected People');
-                %pause(0.05) %uncomment to make runtime longer, or add to
+                %plot([1:length(obj.Infected)], obj.Infected,'r');
+                %xlabel('Days');
+                %ylabel('Infected People');
+                pause(0.05) %uncomment to make runtime longer, or add to
                 %max time also
                 drawnow %THIS IS IMPORTANT IT CONTROLS ALL CALLBACKS DONT TOUCH
                 
