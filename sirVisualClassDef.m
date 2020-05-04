@@ -253,21 +253,21 @@ classdef sirVisualClassDef < handle
         end
         
         function draw(obj)
-            %subplot(2,1,1);
+            subplot(2,1,1);
             axis equal
             set(gca,'Color','k','XTick',[],'YTick',[]);
             
             counter=1;
             while obj.t<1.5 % <- /dt is the number of iterations simulation runs
-                %subplot(2,1,1);
    
-                infCountCur = 0;
+                infCountCur = 1;
 
                 obj.step;
                 if counter==1
                     for i=1:obj.N %converting points to rounded rectangles
                         obj.phand(i)=rectangle('Position', [obj.pos(i,1)-0.5 obj.pos(i,2)-0.5 0.3 0.3],'Curvature',[1 1],'FaceColor','b','EdgeColor','k');  
                     end
+                    obj.infCount = 1;
                 else
                     for i=1:obj.N %changing position of rectangles on every iteration
                         set(obj.phand(i),'Position', [obj.pos(i,1)-0.5 obj.pos(i,2)-0.5 0.3 0.3]);
@@ -295,19 +295,21 @@ classdef sirVisualClassDef < handle
                         end
                     end
                 end
+                
                 obj.infCount = infCountCur;
+                
                 counter=counter+1;
                 xlim([0 obj.L]);    %setting dimensions of display
                 ylim([0 obj.L]);    %setting dimensions of display
                     
-                %subplot(2,1,2)
+                subplot(2,1,2)
                 
-                %plot([1:length(obj.Infected)], obj.Infected,'r');
-                %xlabel('Days');
-                %ylabel('Infected People');
-                pause(0.05) %uncomment to make runtime longer, or add to
+                plot([1:length(obj.Infected)], obj.Infected,'r');
+                xlabel('Days');
+                ylabel('Infected People');
+                %pause(0.05) %uncomment to make runtime longer, or add to
                 %max time also
-                drawnow %THIS IS IMPORTANT IT CONTROLS ALL CALLBACKS DONT TOUCH
+                drawnow %controls all callbacks 
                 
             end
         end
