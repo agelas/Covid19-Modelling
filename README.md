@@ -1,5 +1,17 @@
 Forked from Prob Stats COVID project
 
+<h1>About</h1>
+The spread of COVID19 has illuminated the need for a better understanding
+of disease spread mechanics and the impact of non-pharmaceutical interventions. 
+Using county level data from the state of New York, our group was able to 
+develop a simple model for illustrating the spread of COVID19 is simulated 
+communities. 
+
+<h1>How It Works</h1>
+R0 values were determined for rural, suburban, and urban areas by using least
+squares linear regression. The R0 values dictate the rate of transition in SIR models from S to I, where S is susceptible, I is infected, and R is recovered/removed from the population. After determining those values, they were converted into parameters for a stochastic model using Bernoulli random variables to simulate the transition from S to I. The recovered/removed population was ignored in this model because there is still little consensus on how long infected individuals remain infectious after recovering. After determining the number of infected individuals in the simulation, the infected population is further split up into three categories, asymptomatic, mild symptomatic, and severe symptomatic. The individuals in the simulation are assigned a random age, and the younger the age, the more likely that individual is to be asymptomatic or mild symptomatic. [Stochasic Model](/images/SImodel.JPG)
+
+<h1>Programs and Scripts</h1>
 launchModel.m: Ideally the only function that is interacted with at the end
 of the day when it comes to controlling sirModel.m and sirODE.m.
 
