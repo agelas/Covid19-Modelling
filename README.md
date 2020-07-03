@@ -11,9 +11,12 @@ communities.
 R0 values were determined for rural, suburban, and urban areas by using least
 squares linear regression. The R0 values dictate the rate of transition in SIR models from S to I, where S is susceptible, I is infected, and R is recovered/removed from the population. After determining those values, they were converted into parameters for a stochastic model using Bernoulli random variables to simulate the transition from S to I. The recovered/removed population was ignored in this model because there is still little consensus on how long infected individuals remain infectious after recovering. After determining the number of infected individuals in the simulation, the infected population is further split up into three categories, asymptomatic, mild symptomatic, and severe symptomatic. The individuals in the simulation are assigned a random age, and the younger the age, the more likely that individual is to be asymptomatic or mild symptomatic.
 
-<h1>Programs and Scripts</h1>
-**launchModel.m**: Ideally the only function that is interacted with at the end
-of the day when it comes to controlling sirModel.m and sirODE.m.
+<h1>Programs and Scripts</h1> 
+
+**visualScript.m**: Contains all the instructions for running sirVisualClassDef.m,
+this is the place to call the simulation object, and is ideally the only script people should use. Will display all graphics and animations. 
+
+**launchModel.m**: Responsible for getting R0 values from sample regions in New York using least squares fitting. 
 
 **sirModel.m**: Sets up and passes in the initial conditions necessary for
 sirODE.m to fulfill its job. Arguments are susceptible % of population, 
@@ -40,6 +43,3 @@ for true and 0 for false. If you named your object obj, the next thing you do to
 the animation is to input draw(obj) into the command window. There is also
 a function called drawInfected, so you can call drawInfected(obj), and you 
 will just see a graph of the infected people grow over time. 
-
-**visualScript.m**: Contains all the instructions for running sirVisualClassDef.m,
-this is the place to call the simulation object. 
