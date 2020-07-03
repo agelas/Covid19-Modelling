@@ -12,20 +12,20 @@ R0 values were determined for rural, suburban, and urban areas by using least
 squares linear regression. The R0 values dictate the rate of transition in SIR models from S to I, where S is susceptible, I is infected, and R is recovered/removed from the population. After determining those values, they were converted into parameters for a stochastic model using Bernoulli random variables to simulate the transition from S to I. The recovered/removed population was ignored in this model because there is still little consensus on how long infected individuals remain infectious after recovering. After determining the number of infected individuals in the simulation, the infected population is further split up into three categories, asymptomatic, mild symptomatic, and severe symptomatic. The individuals in the simulation are assigned a random age, and the younger the age, the more likely that individual is to be asymptomatic or mild symptomatic.
 
 <h1>Programs and Scripts</h1>
-launchModel.m: Ideally the only function that is interacted with at the end
+**launchModel.m**: Ideally the only function that is interacted with at the end
 of the day when it comes to controlling sirModel.m and sirODE.m.
 
-sirModel.m: Sets up and passes in the initial conditions necessary for
+**sirModel.m**: Sets up and passes in the initial conditions necessary for
 sirODE.m to fulfill its job. Arguments are susceptible % of population, 
 infected %, recovered %, time duration for simulation, R0 (how many people
 an infected person infects), and recovery rate. Called from launchModel.m.
 
-sirODE.m: Uses ode45 (nonstiff, medium accuracy) to integrate the three 
+**sirODE.m**: Uses ode45 (nonstiff, medium accuracy) to integrate the three 
 differential equations responsible that are part of the SIR model. This 
 function should never be called by itself and is only called through 
 sirModel.m
 
-sirVisualClassDef.m: Should not be called directly. But for reference, this 
+**sirVisualClassDef.m**: Should not be called directly. But for reference, this 
 code creates an object of type sirVisualClassDef and runs the model. Follows 
 the format of obj = sirVisualClassDef(N,KE,SD,SDT,T). N is the number of people in
 simulation environment. Make sure it's a square number like 64 or 100. Don't 
@@ -41,5 +41,5 @@ the animation is to input draw(obj) into the command window. There is also
 a function called drawInfected, so you can call drawInfected(obj), and you 
 will just see a graph of the infected people grow over time. 
 
-visualScript.m: Contains all the instructions for running sirVisualClassDef.m,
+**visualScript.m**: Contains all the instructions for running sirVisualClassDef.m,
 this is the place to call the simulation object. 
