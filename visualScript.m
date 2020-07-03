@@ -23,16 +23,16 @@
 %green if they test positive. 
  
 number_people = 100;
-interaction_parameter = 0.5; %1.2 for urban, 1 for suburban, 0.8 for rural
-social_distancing = 1;
+interaction_parameter = 1.2; %1.2 for urban, 1 for suburban, 0.8 for rural
+social_distancing = 0;
 social_distancing_threshold = 2; %Currently set to 20% before social distancing kicks in
-testing_present = 1;
+testing_present = 0;
 
 %Uncomment the next three lines if you want to see it run with the
 %animantion of people interacting with each other in the simulation
-%sirVisual=sirVisualClassDef(number_people, interaction_parameter, social_distancing, social_distancing_threshold, testing_present); 
-%draw(sirVisual)
-%clear figure
+sirVisual=sirVisualClassDef(number_people, interaction_parameter, social_distancing, social_distancing_threshold, testing_present); 
+draw(sirVisual)
+clear figure
 
 %Since this is a stochastic model, you may need to run the model several
 %(ie hundreds) of times to draw conclusions from it. The function
@@ -40,7 +40,7 @@ testing_present = 1;
 %animation part of disease spread. 
 
 %%%%%%%%%%%%%%%
-   runs = 5;  
+   runs = 1;  
 %%%%%%%%%%%%%%%
 
 collection = zeros(runs,150);
